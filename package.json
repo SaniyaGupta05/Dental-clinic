@@ -1,0 +1,12 @@
+{
+  "name": "kumar-dental-clinic-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "web": "npm --prefix apps/clinic-dashboard run dev",
+    "dashboard": "npm --prefix apps/clinic-dashboard run dev",
+    "mobile": "npm --prefix apps/patient-mobile start",
+    "start": "npm --prefix apps/clinic-dashboard run dev",
+    "build:web": "npm --prefix apps/clinic-dashboard run build"
+  }
+}

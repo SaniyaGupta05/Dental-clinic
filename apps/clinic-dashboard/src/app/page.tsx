@@ -1,0 +1,54 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Activity, Shield, ArrowRight, Stethoscope } from "lucide-react";
+
+export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if staff token exists
+    const token = typeof window !== "undefined" ? localStorage.getItem("staff_access_token") : null;
+    if (token) {
+      router.replace("/dashboard");
+    } else {
+      router.replace("/login");
+    }
+  }, [router]);
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-white flex flex-col justify-center items-center p-6 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400 mb-6 shadow-xl shadow-teal-500/10">
+        <Activity className="w-8 h-8 animate-pulse" />
+      </div>
+      
+      <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+        Kumar Dental Clinic
+      </h1>
+      <p className="mt-2 text-sm text-teal-400 font-medium">
+        Vadodara, Gujarat • Est. 1988
+      </p>
+      
+      <p className="mt-4 text-slate-400 max-w-md text-sm">
+        Redirecting you to the Clinic Management Portal...
+      </p>
+
+      <div className="mt-8 flex flex-col sm:flex-row gap-3">
+        <Link
+          href="/login"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 font-medium text-white shadow-lg transition-all"
+        >
+          <Shield className="w-4 h-4" /> Go to Staff Login <ArrowRight className="w-4 h-4" />
+        </Link>
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 font-medium text-slate-200 border border-slate-700 transition-all"
+        >
+          <Stethoscope className="w-4 h-4" /> Direct to Dashboard
+        </Link>
+      </div>
+    </div>
+  );
+}

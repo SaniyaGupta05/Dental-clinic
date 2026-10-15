@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kumar_dental_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kumar_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kumar_secure_password_123}
+      POSTGRES_DB: ${POSTGRES_DB:-kumar_dental_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kumar_admin} -d ${POSTGRES_DB:-kumar_dental_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: kumar_dental_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-minio_admin}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-minio_secret_password_123}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: kumar_dental_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-kumar_admin}:${POSTGRES_PASSWORD:-kumar_secure_password_123}@postgres:5432/${POSTGRES_DB:-kumar_dental_db}
+      JWT_SECRET: ${JWT_SECRET:-kumar_jwt_super_secret_for_development_only_replace_in_prod}
+      STORAGE_ENDPOINT_URL: http://minio:9000
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-minio_admin}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-minio_secret_password_123}
+      STORAGE_BUCKET_NAME: kumar-dental-private-documents
+      DEV_OTP_MOCK: "true"
+    ports:
+      - "8000:8000"
+
+  clinic-dashboard:
+    build:
+      context: ../apps/clinic-dashboard
+      dockerfile: Dockerfile
+    container_name: kumar_dental_dashboard
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+  minio_data:
