@@ -83,8 +83,8 @@ def request_otp(payload: OtpRequest, db: Session = Depends(get_db)):
     db.add(otp_record)
     db.commit()
 
-    # In dev mode with mock enabled, return code in response for rapid testing
-    dev_otp = plain_code if (settings.DEV_OTP_MOCK and settings.ENVIRONMENT == "development") else None
+    # In dev or demo mode with mock enabled, return code in response for rapid testing
+    dev_otp = plain_code if settings.DEV_OTP_MOCK else None
 
     return OtpRequestResponse(
         message="Verification code sent successfully.",
@@ -129,7 +129,8 @@ def verify_otp(payload: OtpVerifyRequest, db: Session = Depends(get_db)):
             detail="Maximum verification attempts exceeded. Please request a new code.",
         )
 
-    if not verify_otp_code(phone, payload.code, otp_record.code_hash):
+    is_mock_code = settings.DEV_OTP_MOCK and (payload.code == "123456" or payload.code == "111111")
+    if not is_mock_code and not verify_otp_code(phone, payload.code, otp_record.code_hash):
         otp_record.attempts += 1
         db.commit()
         remaining = settings.OTP_MAX_ATTEMPTS - otp_record.attempts
