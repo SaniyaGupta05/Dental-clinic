@@ -6,7 +6,7 @@ from sqlalchemy import or_, func
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.dependencies import get_current_user, require_staff, require_admin
+from app.core.dependencies import get_current_user, require_staff, require_admin, require_doctor
 from app.models.user import User, UserRole
 from app.models.profile import PatientProfile, DoctorProfile, StaffProfile
 from app.models.appointment import Appointment, AppointmentStatus, AppointmentEvent
@@ -18,6 +18,7 @@ from app.schemas.admin import (
     PatientSummary,
     PatientListResponse,
     PatientCreateAdminRequest,
+    PatientUpdateAdminRequest,
     AuditLogResponse,
     ClinicSettingsResponse,
     ClinicSettingsUpdate,
@@ -316,6 +317,117 @@ def get_patient_detail(
         "created_at": patient.created_at.isoformat(),
         "appointments": app_list
     }
+
+
+@router.put("/patients/{patient_id}")
+def update_patient_record(
+    patient_id: str,
+    payload: PatientUpdateAdminRequest,
+    current_user: User = Depends(require_doctor),
+    db: Session = Depends(get_db)
+):
+    """Doctor or Admin can update patient details."""
+    patient = db.query(PatientProfile).filter(PatientProfile.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found.")
+
+    if payload.first_name is not None:
+        patient.first_name = payload.first_name.strip()
+    if payload.last_name is not None:
+        patient.last_name = payload.last_name.strip()
+    if payload.gender is not None:
+        patient.gender = payload.gender
+    if payload.date_of_birth is not None:
+        patient.date_of_birth = payload.date_of_birth
+    if payload.blood_group is not None:
+        patient.blood_group = payload.blood_group
+    if payload.allergies is not None:
+        patient.allergies = payload.allergies.strip() if payload.allergies else None
+    if payload.medical_history_notes is not None:
+        patient.medical_history_notes = payload.medical_history_notes.strip() if payload.medical_history_notes else None
+    if payload.emergency_contact_name is not None:
+        patient.emergency_contact_name = payload.emergency_contact_name.strip() if payload.emergency_contact_name else None
+    if payload.emergency_contact_phone is not None:
+        patient.emergency_contact_phone = payload.emergency_contact_phone.strip() if payload.emergency_contact_phone else None
+    if payload.address is not None:
+        patient.address = payload.address.strip() if payload.address else None
+    if payload.city is not None:
+        patient.city = payload.city.strip() if payload.city else "Vadodara"
+
+    # Update phone or email on user account if provided
+    if patient.user:
+        if payload.phone:
+            patient.user.phone = payload.phone.strip()
+        if payload.email is not None:
+            patient.user.email = payload.email.strip() if payload.email else None
+
+    # Audit log
+    audit = AuditLog(
+        actor_id=current_user.id,
+        action="PATIENT_UPDATED",
+        target_type="PATIENT",
+        target_id=patient.id,
+        metadata_json=f'{{"patient_name": "{patient.full_name}", "updated_by": "{current_user.email}"}}'
+    )
+    db.add(audit)
+    db.commit()
+    db.refresh(patient)
+
+    return {
+        "id": patient.id,
+        "first_name": patient.first_name,
+        "last_name": patient.last_name,
+        "full_name": patient.full_name,
+        "phone": patient.user.phone if patient.user else None,
+        "email": patient.user.email if patient.user else None,
+        "gender": patient.gender,
+        "date_of_birth": patient.date_of_birth.isoformat() if patient.date_of_birth else None,
+        "blood_group": patient.blood_group,
+        "city": patient.city,
+        "allergies": patient.allergies,
+        "medical_history_notes": patient.medical_history_notes,
+        "emergency_contact_name": patient.emergency_contact_name,
+        "emergency_contact_phone": patient.emergency_contact_phone,
+        "address": patient.address,
+    }
+
+
+@router.delete("/patients/{patient_id}", status_code=status.HTTP_200_OK)
+def delete_patient_record(
+    patient_id: str,
+    current_user: User = Depends(require_doctor),
+    db: Session = Depends(get_db)
+):
+    """Doctor or Admin can delete a patient record and associated data."""
+    patient = db.query(PatientProfile).filter(PatientProfile.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found.")
+
+    patient_name = patient.full_name
+    user_id = patient.user_id
+
+    # Create audit log before deleting
+    audit = AuditLog(
+        actor_id=current_user.id,
+        action="PATIENT_DELETED",
+        target_type="PATIENT",
+        target_id=patient.id,
+        metadata_json=f'{{"patient_name": "{patient_name}", "deleted_by": "{current_user.email}"}}'
+    )
+    db.add(audit)
+
+    # Delete patient profile (cascade handles documents, etc.)
+    db.delete(patient)
+
+    # Also delete user account if exists
+    if user_id:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            db.delete(user)
+
+    db.commit()
+
+    return {"message": f"Patient record for {patient_name} deleted successfully."}
 
 
 @router.get("/audit-logs", response_model=List[AuditLogResponse])

@@ -118,6 +118,19 @@ class ApiClient {
     });
   }
 
+  async updatePatient(patientId: string, data: any) {
+    return this.request<any>(`/admin/patients/${patientId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deletePatient(patientId: string) {
+    return this.request<any>(`/admin/patients/${patientId}`, {
+      method: "DELETE",
+    });
+  }
+
   async getAuditLogs(limit = 50) {
     return this.request<any[]>(`/admin/audit-logs?limit=${limit}`);
   }

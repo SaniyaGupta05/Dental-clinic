@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useAuth } from "@/providers/AuthProvider";
 import {
   Users,
   Search,
@@ -14,13 +15,19 @@ import {
   AlertCircle,
   FileText,
   UserPlus,
+  Pencil,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 export default function PatientsPage() {
   const queryClient = useQueryClient();
+  const { isDoctor, isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // New Patient Form
   const [formData, setFormData] = useState({
@@ -39,6 +46,25 @@ export default function PatientsPage() {
   });
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Edit Patient Form
+  const [editFormData, setEditFormData] = useState({
+    first_name: "",
+    last_name: "",
+    phone: "",
+    email: "",
+    date_of_birth: "",
+    gender: "Male",
+    blood_group: "O+",
+    allergies: "",
+    medical_history_notes: "",
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
+    address: "",
+    city: "Vadodara",
+  });
+  const [editError, setEditError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   // Queries
   const { data: patientsData, isLoading } = useQuery({
     queryKey: ["patients", searchTerm],
@@ -51,7 +77,7 @@ export default function PatientsPage() {
     enabled: !!selectedPatientId,
   });
 
-  // Mutation
+  // Mutations
   const createPatientMutation = useMutation({
     mutationFn: (data: any) => api.createPatientAtDesk(data),
     onSuccess: (newPatient) => {
@@ -79,6 +105,79 @@ export default function PatientsPage() {
       setFormError(err.message || "Failed to register patient.");
     },
   });
+
+  const updatePatientMutation = useMutation({
+    mutationFn: (data: { id: string; payload: any }) => api.updatePatient(data.id, data.payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["patients"] });
+      queryClient.invalidateQueries({ queryKey: ["patientDetail", selectedPatientId] });
+      setShowEditModal(false);
+      setEditError(null);
+    },
+    onError: (err: any) => {
+      setEditError(err.message || "Failed to update patient record.");
+    },
+  });
+
+  const deletePatientMutation = useMutation({
+    mutationFn: (patientId: string) => api.deletePatient(patientId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["patients"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboardKpis"] });
+      setShowDeleteConfirm(false);
+      setSelectedPatientId(null);
+      setDeleteError(null);
+    },
+    onError: (err: any) => {
+      setDeleteError(err.message || "Failed to delete patient record.");
+    },
+  });
+
+  const handleOpenEdit = (p: any) => {
+    setEditFormData({
+      first_name: p.first_name || "",
+      last_name: p.last_name || "",
+      phone: p.phone || "",
+      email: p.email || "",
+      date_of_birth: p.date_of_birth ? p.date_of_birth.split("T")[0] : "",
+      gender: p.gender || "Male",
+      blood_group: p.blood_group || "O+",
+      allergies: p.allergies || "",
+      medical_history_notes: p.medical_history_notes || "",
+      emergency_contact_name: p.emergency_contact_name || "",
+      emergency_contact_phone: p.emergency_contact_phone || "",
+      address: p.address || "",
+      city: p.city || "Vadodara",
+    });
+    setEditError(null);
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editFormData.first_name.trim() || !editFormData.last_name.trim()) {
+      setEditError("First name and last name are required.");
+      return;
+    }
+    updatePatientMutation.mutate({
+      id: selectedPatientId!,
+      payload: {
+        first_name: editFormData.first_name.trim(),
+        last_name: editFormData.last_name.trim(),
+        phone: editFormData.phone.trim() || undefined,
+        email: editFormData.email.trim() || undefined,
+        gender: editFormData.gender,
+        blood_group: editFormData.blood_group,
+        city: editFormData.city.trim() || "Vadodara",
+        date_of_birth: editFormData.date_of_birth || undefined,
+        allergies: editFormData.allergies.trim() || undefined,
+        medical_history_notes: editFormData.medical_history_notes.trim() || undefined,
+        emergency_contact_name: editFormData.emergency_contact_name.trim() || undefined,
+        emergency_contact_phone: editFormData.emergency_contact_phone.trim() || undefined,
+        address: editFormData.address.trim() || undefined,
+      },
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,17 +310,39 @@ export default function PatientsPage() {
               <p className="text-xs text-slate-400 text-center py-12">Patient details unavailable.</p>
             ) : (
               <>
-                <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-start justify-between border-b border-slate-100 pb-4 gap-2">
                   <div>
                     <h2 className="text-lg font-bold text-slate-900">{patientDetail.full_name}</h2>
                     <p className="text-xs text-slate-500 font-mono">{patientDetail.phone}</p>
                   </div>
-                  <button
-                    onClick={() => setSelectedPatientId(null)}
-                    className="text-slate-400 hover:text-slate-600 text-sm p-1"
-                  >
-                    ✕
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {(isDoctor || isAdmin) && (
+                      <>
+                        <button
+                          onClick={() => handleOpenEdit(patientDetail)}
+                          className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all shadow-sm"
+                          title="Edit Patient Record (Doctor Only)"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setShowDeleteConfirm(true)}
+                          className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all shadow-sm"
+                          title="Delete Patient Record (Doctor Only)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Delete
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={() => setSelectedPatientId(null)}
+                      className="text-slate-400 hover:text-slate-600 text-sm p-1 ml-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
 
                 {/* Demographics & Medical Notes */}
@@ -247,6 +368,17 @@ export default function PatientsPage() {
                       {patientDetail.allergies || "No recorded drug or contact allergies."}
                     </p>
                   </div>
+
+                  {patientDetail.medical_history_notes && (
+                    <div>
+                      <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider block mb-1">
+                        Medical History Notes:
+                      </span>
+                      <p className="p-2.5 bg-amber-50 border border-amber-100 rounded-xl text-amber-900 font-medium">
+                        {patientDetail.medical_history_notes}
+                      </p>
+                    </div>
+                  )}
 
                   <div>
                     <span className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider block mb-1">
@@ -298,12 +430,12 @@ export default function PatientsPage() {
 
             {formError && (
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
-                <span>{formError}</span>
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {formError}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-3.5">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">First Name *</label>
@@ -333,11 +465,44 @@ export default function PatientsPage() {
                   <input
                     type="text"
                     required
-                    placeholder="+919824037497"
+                    placeholder="+91..."
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white font-mono"
                   />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Date of Birth</label>
+                  <input
+                    type="date"
+                    value={formData.date_of_birth}
+                    onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Gender</label>
+                  <select
+                    value={formData.gender}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                  >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Blood Group</label>
@@ -359,10 +524,10 @@ export default function PatientsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Allergies (e.g. Penicillin, Latex)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Known Allergies</label>
                 <input
                   type="text"
-                  placeholder="None known or specify"
+                  placeholder="e.g. Penicillin, Latex, Local anesthesia"
                   value={formData.allergies}
                   onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
                   className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
@@ -371,7 +536,7 @@ export default function PatientsPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Emergency Contact Name</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Emergency Name</label>
                   <input
                     type="text"
                     value={formData.emergency_contact_name}
@@ -407,6 +572,257 @@ export default function PatientsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Patient Modal (Doctor / Admin Only) */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg">
+                  <Pencil className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-base text-slate-900">Edit Patient Record</h3>
+              </div>
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600 text-sm">
+                ✕
+              </button>
+            </div>
+
+            {editError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {editError}
+              </div>
+            )}
+
+            <form onSubmit={handleEditSubmit} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">First Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.first_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, first_name: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Last Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.last_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, last_name: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number</label>
+                  <input
+                    type="text"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Date of Birth</label>
+                  <input
+                    type="date"
+                    value={editFormData.date_of_birth}
+                    onChange={(e) => setEditFormData({ ...editFormData, date_of_birth: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Gender</label>
+                  <select
+                    value={editFormData.gender}
+                    onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                  >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Blood Group</label>
+                  <select
+                    value={editFormData.blood_group}
+                    onChange={(e) => setEditFormData({ ...editFormData, blood_group: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                  >
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Known Allergies</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Penicillin, Latex"
+                  value={editFormData.allergies}
+                  onChange={(e) => setEditFormData({ ...editFormData, allergies: e.target.value })}
+                  className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Medical History Notes</label>
+                <textarea
+                  rows={2}
+                  placeholder="Clinical history, chronic conditions, dental alerts..."
+                  value={editFormData.medical_history_notes}
+                  onChange={(e) => setEditFormData({ ...editFormData, medical_history_notes: e.target.value })}
+                  className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Address</label>
+                  <input
+                    type="text"
+                    value={editFormData.address}
+                    onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">City</label>
+                  <input
+                    type="text"
+                    value={editFormData.city}
+                    onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Emergency Name</label>
+                  <input
+                    type="text"
+                    value={editFormData.emergency_contact_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, emergency_contact_name: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Emergency Phone</label>
+                  <input
+                    type="text"
+                    value={editFormData.emergency_contact_phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, emergency_contact_phone: e.target.value })}
+                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatePatientMutation.isPending}
+                  className="px-4 py-2 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-sm"
+                >
+                  {updatePatientMutation.isPending ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal (Doctor / Admin Only) */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200 animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-slate-900">Delete Patient Record</h3>
+                <p className="text-xs text-slate-500">Clinical authority check (Doctor only)</p>
+              </div>
+            </div>
+
+            {deleteError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {deleteError}
+              </div>
+            )}
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Are you sure you want to permanently delete the patient record for{" "}
+              <strong className="text-slate-900">{patientDetail?.full_name}</strong>?
+            </p>
+
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 space-y-1">
+              <p className="font-semibold">⚠️ Irreversible Clinical Action:</p>
+              <p className="text-[11px] text-rose-700">
+                This will delete the patient profile, user account, visit history, and linked clinical documents. An entry will be permanently recorded in the medical Audit Log.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteError(null);
+                }}
+                className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deletePatientMutation.isPending}
+                onClick={() => deletePatientMutation.mutate(selectedPatientId!)}
+                className="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-sm"
+              >
+                {deletePatientMutation.isPending ? "Deleting..." : "Confirm & Delete Record"}
+              </button>
+            </div>
           </div>
         </div>
       )}

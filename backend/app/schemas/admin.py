@@ -65,6 +65,36 @@ class PatientCreateAdminRequest(BaseModel):
         return v
 
 
+class PatientUpdateAdminRequest(BaseModel):
+    first_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    last_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    phone: Optional[str] = Field(None, min_length=10, max_length=20)
+    email: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    gender: Optional[str] = None
+    blood_group: Optional[str] = None
+    allergies: Optional[str] = None
+    medical_history_notes: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+
+    @field_validator("date_of_birth", mode="before")
+    @classmethod
+    def empty_str_to_none_date(cls, v):
+        if v == "" or v is None:
+            return None
+        return v
+
+    @field_validator("email", "allergies", "medical_history_notes", "emergency_contact_name", "emergency_contact_phone", "address", mode="before")
+    @classmethod
+    def empty_str_to_none(cls, v):
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
+
+
 class AuditLogResponse(BaseModel):
     id: str
     actor_id: Optional[str] = None
