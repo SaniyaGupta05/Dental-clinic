@@ -53,3 +53,22 @@ def test_doctor_can_edit_and_delete_patient(client):
     # Verify patient no longer exists -> 404
     get_res = client.get(f"/api/v1/admin/patients/{patient_id}", headers=doc_headers)
     assert get_res.status_code == 404
+
+
+def test_delete_patient_with_appointments(client):
+    doc_login = client.post("/api/v1/auth/staff/login", json={"email": "dr.kumar@kumardentalclinic.com", "password": "DrKumar@2026"})
+    doc_headers = {"Authorization": f"Bearer {doc_login.json()['access_token']}"}
+
+    # Register patient
+    reg_res = client.post("/api/v1/admin/patients", json={
+        "first_name": "Test",
+        "last_name": "WithVisits",
+        "phone": "+919876500099",
+        "city": "Vadodara"
+    }, headers=doc_headers)
+    patient_id = reg_res.json()["id"]
+
+    # Delete patient with any existing records -> 200 OK
+    del_res = client.delete(f"/api/v1/admin/patients/{patient_id}", headers=doc_headers)
+    assert del_res.status_code == 200
+    assert "deleted successfully" in del_res.json()["message"]

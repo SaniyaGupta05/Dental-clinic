@@ -405,6 +405,7 @@ def delete_patient_record(
 
     patient_name = patient.full_name
     user_id = patient.user_id
+    phone = patient.user.phone if patient.user else None
 
     # Create audit log before deleting
     audit = AuditLog(
@@ -416,11 +417,33 @@ def delete_patient_record(
     )
     db.add(audit)
 
-    # Delete patient profile (cascade handles documents, etc.)
+    # Clean up dependent clinical records first (due to ondelete=RESTRICT)
+    from app.models.clinical import TreatmentRecord, Prescription, PrescriptionItem
+    from app.models.document import PatientDocument
+    from app.models.user import OtpCode, RefreshToken
+
+    prescriptions = db.query(Prescription).filter(Prescription.patient_id == patient_id).all()
+    for rx in prescriptions:
+        db.query(PrescriptionItem).filter(PrescriptionItem.prescription_id == rx.id).delete()
+        db.delete(rx)
+
+    db.query(TreatmentRecord).filter(TreatmentRecord.patient_id == patient_id).delete()
+    db.query(PatientDocument).filter(PatientDocument.patient_id == patient_id).delete()
+    db.query(FollowUp).filter(FollowUp.patient_id == patient_id).delete()
+
+    appointments = db.query(Appointment).filter(Appointment.patient_id == patient_id).all()
+    for appt in appointments:
+        db.query(AppointmentEvent).filter(AppointmentEvent.appointment_id == appt.id).delete()
+        db.delete(appt)
+
+    # Delete patient profile
     db.delete(patient)
 
-    # Also delete user account if exists
+    # Also delete user account and tokens if exists
     if user_id:
+        db.query(RefreshToken).filter(RefreshToken.user_id == user_id).delete()
+        if phone:
+            db.query(OtpCode).filter(OtpCode.phone == phone).delete()
         user = db.query(User).filter(User.id == user_id).first()
         if user:
             db.delete(user)
