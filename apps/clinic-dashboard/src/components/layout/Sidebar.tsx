@@ -81,8 +81,12 @@ export default function Sidebar() {
     <aside className="w-64 bg-slate-900 text-white flex flex-col min-h-screen border-r border-slate-800 shrink-0">
       {/* Brand Header */}
       <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400 font-bold shadow-lg shadow-teal-500/10">
-          <Sparkles className="w-5 h-5" />
+        <div className="w-11 h-12 rounded-xl overflow-hidden bg-white border border-slate-700 flex items-center justify-center shrink-0 shadow-lg">
+          <img
+            src="/logo.jpg"
+            alt="Kumar Dental Clinic Logo"
+            className="w-full h-full object-cover"
+          />
         </div>
         <div>
           <h1 className="font-bold text-base tracking-wide text-white flex items-center gap-1.5">

@@ -1,8 +1,6 @@
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL ||
-  (typeof window !== "undefined" && window.location.hostname === "localhost"
-    ? "http://localhost:8000/api/v1"
-    : "https://dental-clinic-ws8b.onrender.com/api/v1")
+  "https://dental-clinic-ws8b.onrender.com/api/v1"
 ).replace(/\/+$/, "");
 
 export interface ApiError {

@@ -20,8 +20,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col justify-center items-center p-6 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400 mb-6 shadow-xl shadow-teal-500/10">
-        <Activity className="w-8 h-8 animate-pulse" />
+      <div className="w-24 h-28 rounded-2xl overflow-hidden bg-white border-2 border-white/20 flex items-center justify-center mb-6 shadow-2xl">
+        <img
+          src="/logo.jpg"
+          alt="Kumar Dental Clinic Logo"
+          className="w-full h-full object-cover"
+        />
       </div>
       
       <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">

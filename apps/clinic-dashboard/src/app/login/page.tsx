@@ -35,8 +35,12 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/80 p-8 space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-600 shadow-lg shadow-teal-500/10">
-            <Stethoscope className="w-7 h-7" />
+          <div className="w-20 h-24 mx-auto rounded-2xl overflow-hidden bg-white border border-slate-200 flex items-center justify-center shadow-lg">
+            <img
+              src="/logo.jpg"
+              alt="Kumar Dental Clinic Logo"
+              className="w-full h-full object-cover"
+            />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Doctor Portal

@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   title: "Kumar Dental Clinic - Clinic Management Portal",
   description:
     "Internal operations, appointment scheduling, patient management, and doctor clinical workspace for Kumar Dental Clinic, Gotri, Vadodara.",
+  icons: {
+    icon: "/logo.jpg",
+    shortcut: "/logo.jpg",
+    apple: "/logo.jpg",
+  },
 };
 
 export default function RootLayout({
