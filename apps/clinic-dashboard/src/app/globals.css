@@ -7,20 +7,20 @@
     --color-teal-100: #fee2e2;
     --color-teal-200: #fecaca;
     --color-teal-300: #fca5a5;
-    --color-teal-400: #f87171;
-    --color-teal-500: #ef4444;
-    --color-teal-600: #d72323;
-    --color-teal-700: #b91c1c;
-    --color-teal-800: #991b1b;
-    --color-teal-900: #7f1d1d;
-    --color-teal-950: #450a0a;
+    --color-teal-400: #b91c1c;
+    --color-teal-500: #991b1b;
+    --color-teal-600: #8b0000;
+    --color-teal-700: #660000;
+    --color-teal-800: #5c0000;
+    --color-teal-900: #450a0a;
+    --color-teal-950: #2a0404;
 
-    --primary: #d72323;
-    --primary-hover: #b91c1c;
+    --primary: #8b0000;
+    --primary-hover: #5c0000;
     --primary-light: #fef2f2;
-    --secondary: #ef4444;
-    --secondary-hover: #dc2626;
-    --dark-teal: #991b1b;
+    --secondary: #991b1b;
+    --secondary-hover: #7f1d1d;
+    --dark-teal: #5c0000;
     --slate-dark: #18181b;
     --charcoal: #09090b;
     --bg-light: #f8fafc;
@@ -32,7 +32,7 @@
     --accent-gold: #eb6a00;
     --success: #10b981;
     --warning: #f59e0b;
-    --danger: #ef4444;
+    --danger: #8b0000;
   }
 }
 
@@ -43,7 +43,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Outlined red buttons (red border + red text, no solid red fill) */
+/* Outlined dark red buttons (dark red border + dark red text, no solid fill) */
 button.bg-teal-600,
 button.bg-teal-500,
 button.bg-rose-600,
@@ -53,8 +53,8 @@ button.bg-slate-900,
 a.bg-teal-600,
 a.bg-teal-500 {
   background-color: #ffffff !important;
-  color: #d72323 !important;
-  border: 1.5px solid #d72323 !important;
+  color: #8b0000 !important;
+  border: 1.5px solid #8b0000 !important;
   box-shadow: none !important;
 }
 
@@ -67,8 +67,8 @@ button.bg-slate-900:hover,
 a.bg-teal-600:hover,
 a.bg-teal-500:hover {
   background-color: #fef2f2 !important;
-  color: #b91c1c !important;
-  border-color: #b91c1c !important;
+  color: #5c0000 !important;
+  border-color: #5c0000 !important;
 }
 
 /* Custom Scrollbars */

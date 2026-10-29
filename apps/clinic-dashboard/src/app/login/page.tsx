@@ -97,7 +97,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 px-4 bg-white hover:bg-red-50 active:bg-red-100 disabled:opacity-50 text-[#d72323] border-2 border-[#d72323] rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 bg-white hover:bg-red-50 active:bg-red-100 disabled:opacity-50 text-[#8b0000] border-2 border-[#8b0000] rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2"
           >
             {isSubmitting ? "Authenticating..." : "Sign In to Clinic Portal"}
             <ArrowRight className="w-4 h-4" />
