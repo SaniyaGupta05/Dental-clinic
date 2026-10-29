@@ -42,13 +42,13 @@ export default function Home() {
       <div className="mt-8 flex flex-col sm:flex-row gap-3">
         <Link
           href="/login"
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-red-50 font-semibold text-[#8b0000] border-2 border-[#8b0000] transition-all"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#fee2e2] hover:bg-[#fecaca] font-semibold text-[#dc2626] border-2 border-[#ef4444] transition-all"
         >
           <Shield className="w-4 h-4" /> Go to Staff Login <ArrowRight className="w-4 h-4" />
         </Link>
         <Link
           href="/dashboard"
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-red-50 font-semibold text-[#8b0000] border-2 border-[#8b0000] transition-all"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#fee2e2] hover:bg-[#fecaca] font-semibold text-[#dc2626] border-2 border-[#ef4444] transition-all"
         >
           <Stethoscope className="w-4 h-4" /> Direct to Dashboard
         </Link>

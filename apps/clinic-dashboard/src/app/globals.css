@@ -3,24 +3,24 @@
 @layer base {
   :root,
   :host {
-    --color-teal-50: #fef2f2;
-    --color-teal-100: #fee2e2;
-    --color-teal-200: #fecaca;
-    --color-teal-300: #fca5a5;
-    --color-teal-400: #b91c1c;
-    --color-teal-500: #991b1b;
-    --color-teal-600: #8b0000;
-    --color-teal-700: #660000;
-    --color-teal-800: #5c0000;
-    --color-teal-900: #450a0a;
-    --color-teal-950: #2a0404;
+    --color-teal-50: #f8fafc;
+    --color-teal-100: #f1f5f9;
+    --color-teal-200: #e2e8f0;
+    --color-teal-300: #cbd5e1;
+    --color-teal-400: #94a3b8;
+    --color-teal-500: #475569;
+    --color-teal-600: #334155;
+    --color-teal-700: #1e293b;
+    --color-teal-800: #0f172a;
+    --color-teal-900: #0f172a;
+    --color-teal-950: #09090b;
 
-    --primary: #8b0000;
-    --primary-hover: #5c0000;
-    --primary-light: #fef2f2;
-    --secondary: #991b1b;
-    --secondary-hover: #7f1d1d;
-    --dark-teal: #5c0000;
+    --primary: #334155;
+    --primary-hover: #1e293b;
+    --primary-light: #f1f5f9;
+    --secondary: #475569;
+    --secondary-hover: #334155;
+    --dark-teal: #1e293b;
     --slate-dark: #18181b;
     --charcoal: #09090b;
     --bg-light: #f8fafc;
@@ -32,7 +32,7 @@
     --accent-gold: #eb6a00;
     --success: #10b981;
     --warning: #f59e0b;
-    --danger: #8b0000;
+    --danger: #ef4444;
   }
 }
 
@@ -43,7 +43,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Outlined dark red buttons (dark red border + dark red text, no solid fill) */
+/* Clean white buttons with subtle red border and black text on inner pages */
 button.bg-teal-600,
 button.bg-teal-500,
 button.bg-rose-600,
@@ -53,8 +53,8 @@ button.bg-slate-900,
 a.bg-teal-600,
 a.bg-teal-500 {
   background-color: #ffffff !important;
-  color: #8b0000 !important;
-  border: 1.5px solid #8b0000 !important;
+  color: #000000 !important;
+  border: 1.5px solid #ef4444 !important;
   box-shadow: none !important;
 }
 
@@ -66,9 +66,9 @@ button.bg-emerald-600:hover,
 button.bg-slate-900:hover,
 a.bg-teal-600:hover,
 a.bg-teal-500:hover {
-  background-color: #fef2f2 !important;
-  color: #5c0000 !important;
-  border-color: #5c0000 !important;
+  background-color: #f8fafc !important;
+  color: #000000 !important;
+  border-color: #dc2626 !important;
 }
 
 /* Custom Scrollbars */
